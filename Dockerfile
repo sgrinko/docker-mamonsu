@@ -6,7 +6,7 @@ FROM debian:buster-slim
 LABEL maintainer="Sergey Grinko <sergey.grinko@gmail.com>"
 
 ENV DEBIAN_RELEASE buster
-ENV PG_MAJOR 12
+ENV PG_MAJOR 13
 ENV BACKUP_PATH /mnt/pgbak
 # version mamonsu
 ENV VERSION 2.6.2
