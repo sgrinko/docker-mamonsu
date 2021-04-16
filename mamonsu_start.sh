@@ -25,7 +25,7 @@ sed -i "s/host = PGHOST/host = ${PGHOST:-127.0.0.1}/g" ${CONFIG_DIR}/agent.conf 
       && sed -i "s/interval = INTERVAL_PGBUFFERCACHE/interval = ${INTERVAL_PGBUFFERCACHE:-1200}/g" ${CONFIG_DIR}/agent.conf \
       && sed -i "s/enabled = PGPROBACKUP_ENABLED/enabled = ${PGPROBACKUP_ENABLED:-False}/g" ${CONFIG_DIR}/agent.conf \
       && sed -i "s/pg_probackup_path = \/usr\/bin\/pg_probackup-PGPROBACKUP_PG_MAJOR/pg_probackup_path = \/usr\/bin\/pg_probackup-${PG_MAJOR}/g" ${CONFIG_DIR}/agent.conf \
-      && sed -i "s/host = MAMONSU_AGENTHOST/host = $MAMONSU_AGENTHOST/g" ${CONFIG_DIR}/agent.conf \
+      && sed -i "s/host = MAMONSU_AGENTHOST/host = ${MAMONSU_AGENTHOST:-127.0.0.1}/g" ${CONFIG_DIR}/agent.conf \
       && sed -i "s/enabled = MEMORYLEAKDIAGNOSTIC_ENABLED/enabled = ${MEMORYLEAKDIAGNOSTIC_ENABLED:-True}/g" ${CONFIG_DIR}/agent.conf \
       && sed -i "s/private_anon_mem_threshold = MEMORYLEAKDIAGNOSTIC_THRESHOLD/private_anon_mem_threshold = ${MEMORYLEAKDIAGNOSTIC_THRESHOLD:-4GB}/g" ${CONFIG_DIR}/agent.conf
 
