@@ -12,33 +12,52 @@
 * Стартовый файл с mamonsu запускается через программу dumb-init, чтобы иметь возможность транслировать корректно внешние сигналы процессу mamonsu.
 
 * Добавлена настройка параметра WORK_MEM для функции mamonsu_buffer_cache(). Это необходимо для того, чтобы исключить использование дисковых операций при запросах к буферному кэшу.
+  
+* Функция `mamonsu_count_wal_lag_lsn()` 
+  
+  Исправлена ошибка XLOG - catch error: float() argument must be a string or a number, not 'NoneType'
+
+  `SELECT application_name, flush_lag, replay_lag, write_lag, total_lag FROM public.mamonsu_count_wal_lag_lsn();`
+
+  Выяснилось, что в поле `total_lag` появляется значение NULL в момент работ по созданию бэкапа.
+  Оказывается, в тот момент пока выполняется бэкап и сервер (мастер) находится в состоянии между:
+
+  `select pg_start_backup()`  и  `select pg_stop_backup ()`
+
+  в представлении `pg_stat_replication` поле `replay_lsn` есть NULL.
+
+  На данный момент мы просто вставили в код расчета поля заглушку на этот момент:
+
+  `pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn) AS total_lag` -> `coalesce(pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn),0)`
 
 * В контейнер включён плагин pg_stat_replication.py, который позволяет корректно контролировать лаг репликации на репликах (до 2-х реплик). Этот плагин работает на мастере. На репликах он никаких метрик не формирует. Для контроля лага репликации на серверах репликах используется модифицированная версия функции mamonsu_timestamp_get():
 
 ```
-CREATE OR REPLACE FUNCTION public.mamonsu_timestamp_get() RETURNS double precision AS
-$BODY$
-  select case when pg_last_wal_receive_lsn() = pg_last_wal_replay_lsn() then 0
-              else extract (epoch from now() - pg_last_xact_replay_timestamp())
-         end;
-$BODY$
-LANGUAGE sql VOLATILE SECURITY DEFINER;
+  CREATE OR REPLACE FUNCTION public.mamonsu_timestamp_get() RETURNS double precision AS
+  $BODY$
+    select case when pg_last_wal_receive_lsn() = pg_last_wal_replay_lsn() then 0
+                else extract (epoch from now() - pg_last_xact_replay_timestamp())
+           end;
+  $BODY$
+  LANGUAGE sql VOLATILE SECURITY DEFINER;
+```
+      Плагин pg_stat_replication.py опирается на код функции mamonsu_pg_stat_replication():
+```
+  CREATE OR REPLACE FUNCTION public.mamonsu_pg_stat_replication()
+  RETURNS TABLE(write_lag double precision, flush_lag double precision, replay_lag double precision) AS
+  $BODY$
+    select coalesce(extract(epoch from write_lag),0) as write_lag,
+           coalesce(extract(epoch from flush_lag),0) as flush_lag,
+           coalesce(extract(epoch from replay_lag),0) as replay_lag
+    from pg_catalog.pg_stat_replication
+    order by client_hostname;
+  $BODY$
+  LANGUAGE sql VOLATILE SECURITY DEFINER;
 ```
 
-Плагин pg_stat_replication.py опирается на код функции mamonsu_pg_stat_replication():
+* pg_patrition.py
 
-```
-CREATE OR REPLACE FUNCTION public.mamonsu_pg_stat_replication()
-RETURNS TABLE(write_lag double precision, flush_lag double precision, replay_lag double precision) AS
-$BODY$
-  select coalesce(extract(epoch from write_lag),0) as write_lag,
-         coalesce(extract(epoch from flush_lag),0) as flush_lag,
-         coalesce(extract(epoch from replay_lag),0) as replay_lag
-  from pg_catalog.pg_stat_replication
-  order by client_hostname;
-$BODY$
-LANGUAGE sql VOLATILE SECURITY DEFINER;
-```
+  В контейнер включён плагин pg_patrition.py, который позволяет контролировать секционированные таблицы. На текущий момент он проверяет число строк в DEFAULT партициях и если в них обнаруживаются строки (обычная ситуация - это отсутствие там строк), то генерируется алерт.
 
 # Переменные окружения контейнера
 
