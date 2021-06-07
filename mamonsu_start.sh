@@ -11,6 +11,9 @@ mkdir -p ${CONFIG_DIR}/plugins
 if [ ! -f ${CONFIG_DIR}/plugins/pg_stat_replication.py ]; then
   cp -f /usr/local/bin/pg_stat_replication.py.tmpl  ${CONFIG_DIR}/plugins/pg_stat_replication.py
 fi
+if [ ! -f ${CONFIG_DIR}/plugins/pg_partition.py ]; then
+  cp -f /usr/local/bin/pg_partition.py.tmpl  ${CONFIG_DIR}/plugins/pg_partition.py
+fi
 if [ ! -f ${CONFIG_DIR}/plugins/__init__.py ]; then
   touch  ${CONFIG_DIR}/plugins/__init__.py
 fi
@@ -51,5 +54,10 @@ for DB in $DB_ALL ; do
     psql -qtAX --dbname="$DB" -f /var/lib/postgresql/mamonsu_right_add.sql
 done
 
+# generate templates...
+cd ${CONFIG_DIR}
+/usr/bin/mamonsu export template template.xml --add-plugins ${CONFIG_DIR}/plugins
+
 # start services...
+cd /
 /usr/bin/mamonsu -a ${CONFIG_DIR}/plugins -c ${CONFIG_DIR}/agent.conf

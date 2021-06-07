@@ -8,7 +8,10 @@ select not pg_is_in_recovery() as is_master \gset
   \if :is_db_mamonsu
       CREATE DATABASE mamonsu;
   \endif
-
+  \c mamonsu
+  CREATE EXTENSION IF NOT EXISTS pg_buffercache;
+  CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+  -- check role mamonsu ...
   select not exists(select * from pg_roles where rolname = 'mamonsu') as is_role_mamonsu \gset
   \if :is_role_mamonsu
       select :'MAMONSU_PASSWORD' = '' as is_mamonsu_password_exists \gset
@@ -23,6 +26,8 @@ select not pg_is_in_recovery() as is_master \gset
           ALTER ROLE mamonsu WITH PASSWORD :'MAMONSU_PASSWORD' ;
       \endif
   \endif
+  GRANT USAGE ON SCHEMA pg_catalog TO mamonsu;
+  GRANT SELECT ON TABLE pg_proc TO mamonsu;
 \endif
 
 -- get list all current DBs

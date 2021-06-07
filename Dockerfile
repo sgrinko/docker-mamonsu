@@ -9,7 +9,7 @@ ENV DEBIAN_RELEASE buster
 ENV PG_MAJOR 13
 ENV BACKUP_PATH /mnt/pgbak
 # version mamonsu
-ENV VERSION 2.6.2
+ENV VERSION 2.7.1
 
 # explicitly set user/group IDs
 RUN set -eux; \
@@ -50,6 +50,7 @@ RUN apt-get update \
 COPY ./mamonsu_start.sh /usr/local/bin
 COPY ./agent.conf /usr/local/bin/agent.conf.tmpl
 COPY ./pg_stat_replication.py /usr/local/bin/pg_stat_replication.py.tmpl
+COPY ./pg_partition.py /usr/local/bin/pg_partition.py.tmpl
 COPY ./pre.sql /var/lib/postgresql
 COPY ./mamonsu_right_add.sql /var/lib/postgresql
 
