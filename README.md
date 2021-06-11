@@ -105,28 +105,27 @@ services:
     build:
       context: ./docker-mamonsu
       dockerfile: Dockerfile
- 
+
     volumes:
-      - "/mnt/pgbak/:/mnt/pgbak/"
-      - "/var/log/mamonsu:/var/log/mamonsu"
-      - "/etc/mamonsu/:/etc/mamonsu/"
- 
+      - "/mnt/pgbak2/:/mnt/pgbak/"
+      - "/var/log/mamonsu1:/var/log/mamonsu"
+      - "/etc/mamonsu1/:/etc/mamonsu/"
+
     environment:
 #      TZ: "Etc/UTC"
       TZ: "Europe/Moscow"
       PGPASSWORD: qweasdzxc
-#      PGHOST: 10.10.2.139
 #      PGHOST: 127.0.0.1
       PGHOST: postgres
       PGPORT: 5432
       MAMONSU_PASSWORD: 1234512345
-      ZABBIX_SERVER_IP: proxy.my_zbx.ru
+      ZABBIX_SERVER_IP: zbxprxy.server.ru
       ZABBIX_SERVER_PORT: 10051
-      CLIENT_HOSTNAME: postgres_data
+      CLIENT_HOSTNAME: my_host.server.ru
       MAMONSU_AGENTHOST: 127.0.0.1
       INTERVAL_PGBUFFERCACHE: 1200
       PGPROBACKUP_ENABLED: "False"
- 
+
     restart: always
     ports:
       - "10051:10051"
@@ -140,4 +139,73 @@ services:
 clear
 rm -rf /var/log/mamonsu/*
 docker-compose -f "mamonsu-service.yml" up --build "$@"
+```
+
+Рекомендуется запускать этот докер, как докер-спутник для контейнера с postgres:
+
+```
+version: '3.5'
+services:
+ 
+  postgres:
+
+#    image: grufos/postgres:13.3
+    build:
+      context: ./docker-postgres
+      dockerfile: Dockerfile
+    shm_size: '2gb'
+    command: |
+      -c shared_preload_libraries='plugin_debugger,pg_stat_statements,auto_explain,pg_buffercache,pg_cron,shared_ispell,pg_prewarm'
+      -c shared_ispell.max_size=70MB
+    volumes:
+      - "/var/lib/pgsql/13_1/data:/var/lib/postgresql/data"
+      - "/var/log/postgresql1:/var/log/postgresql"
+      - "/mnt/pgbak2/:/mnt/pgbak/"
+    ports:
+      - "5433:5432"
+    environment:
+#      POSTGRES_INITDB_ARGS: "--locale=ru_RU.UTF8 --data-checksums"
+      POSTGRES_PASSWORD: qweasdzxc
+      POSTGRES_HOST_AUTH_METHOD: trust
+      DEPLOY_PASSWORD: qweasdzxc
+#      TZ: "Etc/UTC"
+      TZ: "Europe/Moscow"
+      EMAILTO: "DBA-PostgreSQL@my_name.ru"
+      EMAIL_SERVER: "mail.name.ru"
+      EMAIL_HOSTNAME: "noreplay@my_host.ru"
+      BACKUP_THREADS: "4"
+      BACKUP_MODE: "delta"
+
+
+  mamonsu:
+    build:
+      context: ./docker-mamonsu
+      dockerfile: Dockerfile
+
+    volumes:
+      - "/mnt/pgbak2/:/mnt/pgbak/"
+      - "/var/log/mamonsu1:/var/log/mamonsu"
+      - "/etc/mamonsu1/:/etc/mamonsu/"
+
+    environment:
+#      TZ: "Etc/UTC"
+      TZ: "Europe/Moscow"
+      PGPASSWORD: qweasdzxc
+#      PGHOST: 127.0.0.1
+      PGHOST: postgres
+      PGPORT: 5432
+      MAMONSU_PASSWORD: 1234512345
+      ZABBIX_SERVER_IP: zbxprxy.server.ru
+      ZABBIX_SERVER_PORT: 10051
+      CLIENT_HOSTNAME: my_host.server.ru
+      MAMONSU_AGENTHOST: 127.0.0.1
+      INTERVAL_PGBUFFERCACHE: 1200
+      PGPROBACKUP_ENABLED: "False"
+
+    restart: always
+    depends_on:
+      - postgres
+    ports:
+      - "10051:10051"
+      - "10052:10052"
 ```
