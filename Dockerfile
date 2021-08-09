@@ -53,6 +53,8 @@ COPY ./pg_stat_replication.py /usr/local/bin/pg_stat_replication.py.tmpl
 COPY ./pg_partition.py /usr/local/bin/pg_partition.py.tmpl
 COPY ./pre.sql /var/lib/postgresql
 COPY ./mamonsu_right_add.sql /var/lib/postgresql
+COPY ./pg_probackup.py /usr/lib/python3/dist-packages/mamonsu/plugins/system/linux/pg_probackup.py
+COPY ./const.py /usr/lib/python3/dist-packages/mamonsu/lib/const.py
 
 RUN chown postgres:postgres /var/lib/postgresql/*.sql \
     && chmod +x /usr/local/bin/*.sh
