@@ -13,7 +13,7 @@ select not pg_is_in_recovery() as is_master \gset
     ALTER FUNCTION public.mamonsu_buffer_cache() SET WORK_MEM = :highpage_mb; -- for shared_buffers 16 Гб 200 Мб
     -- correct error for replay_lsn is null
     CREATE OR REPLACE FUNCTION public.mamonsu_count_wal_lag_lsn()
-      RETURNS TABLE(application_name text, flush_lag interval, replay_lag interval, write_lag interval, total_lag numeric) AS
+	  RETURNS TABLE(application_name text, flush_lag interval, replay_lag interval, write_lag interval, total_lag numeric) AS
     $BODY$
     SELECT 
     CONCAT(application_name, ' ', pid) as application_name,
